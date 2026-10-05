@@ -69,13 +69,39 @@
       background-color: #555;
     }
 
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
     #result {
       margin-top: 25px;
       padding-top: 15px;
       border-top: 2px solid #333;
-      font-size: 18px;
+    }
+
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+    }
+
+    .total {
+      font-size: 20px;
       font-weight: bold;
-      text-align: right;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #ddd;
+    }
+
+    .message {
+      text-align: center;
+      color: #666;
+      padding: 20px 0;
+    }
+
+    .error {
+      color: #b00020;
     }
   </style>
 </head>
@@ -85,79 +111,132 @@
   <div class="calculator">
     <h1>Café Bill Calculator</h1>
 
-    <div class="item">
-      <div class="item-info">
-        <strong>Chicken Rice</strong>
-        <div class="price">$4.50</div>
-      </div>
-      <input type="number" id="chickenRice" min="0" value="0">
+    <div id="menu">
+      <div class="message">Loading menu...</div>
     </div>
 
-    <div class="item">
-      <div class="item-info">
-        <strong>Nasi Lemak</strong>
-        <div class="price">$4.00</div>
-      </div>
-      <input type="number" id="nasiLemak" min="0" value="0">
-    </div>
-
-    <div class="item">
-      <div class="item-info">
-        <strong>Laksa</strong>
-        <div class="price">$5.00</div>
-      </div>
-      <input type="number" id="laksa" min="0" value="0">
-    </div>
-
-    <div class="item">
-      <div class="item-info">
-        <strong>Kopi</strong>
-        <div class="price">$1.50</div>
-      </div>
-      <input type="number" id="kopi" min="0" value="0">
-    </div>
-
-    <div class="item">
-      <div class="item-info">
-        <strong>Teh</strong>
-        <div class="price">$1.30</div>
-      </div>
-      <input type="number" id="teh" min="0" value="0">
-    </div>
-
-    <div class="item">
-      <div class="item-info">
-        <strong>Milo</strong>
-        <div class="price">$2.00</div>
-      </div>
-      <input type="number" id="milo" min="0" value="0">
-    </div>
-
-    <button onclick="calculateBill()">Calculate Bill</button>
+    <button id="calculateButton" onclick="calculateBill()" disabled>
+      Calculate Bill
+    </button>
 
     <div id="result">
-      Total: $0.00
+      <div class="bill-row">
+        <span>Subtotal:</span>
+        <span id="subtotal">$0.00</span>
+      </div>
+
+      <div class="bill-row">
+        <span>GST (9%):</span>
+        <span id="gst">$0.00</span>
+      </div>
+
+      <div class="bill-row total">
+        <span>Total:</span>
+        <span id="total">$0.00</span>
+      </div>
     </div>
   </div>
 
   <script>
+    let menuItems = [];
+
+    async function loadMenu() {
+      const menuContainer = document.getElementById("menu");
+      const calculateButton = document.getElementById("calculateButton");
+
+      try {
+        const response = await fetch("menu.csv");
+
+        if (!response.ok) {
+          throw new Error("Unable to load menu.csv");
+        }
+
+        const csvText = await response.text();
+
+        const lines = csvText
+          .trim()
+          .split(/\r?\n/)
+          .slice(1);
+
+        menuItems = lines.map((line, index) => {
+          const [name, price] = line.split(",");
+
+          return {
+            id: "item-" + index,
+            name: name.trim(),
+            price: parseFloat(price.trim())
+          };
+        });
+
+        displayMenu();
+        calculateButton.disabled = false;
+
+      } catch (error) {
+        menuContainer.innerHTML =
+          '<div class="message error">Unable to load the menu.</div>';
+
+        console.error(error);
+      }
+    }
+
+    function displayMenu() {
+      const menuContainer = document.getElementById("menu");
+
+      menuContainer.innerHTML = "";
+
+      menuItems.forEach(item => {
+        const itemElement = document.createElement("div");
+        itemElement.className = "item";
+
+        itemElement.innerHTML = `
+          <div class="item-info">
+            <strong>${item.name}</strong>
+            <div class="price">$${item.price.toFixed(2)}</div>
+          </div>
+
+          <input
+            type="number"
+            id="${item.id}"
+            min="0"
+            step="1"
+            value="0"
+          >
+        `;
+
+        menuContainer.appendChild(itemElement);
+      });
+    }
+
     function getQuantity(id) {
-      const quantity = parseInt(document.getElementById(id).value) || 0;
+      const quantity =
+        parseInt(document.getElementById(id).value) || 0;
+
       return Math.max(0, quantity);
     }
 
     function calculateBill() {
-      const total =
-        getQuantity("chickenRice") * 4.50 +
-        getQuantity("nasiLemak") * 4.00 +
-        getQuantity("laksa") * 5.00 +
-        getQuantity("kopi") * 1.50 +
-        getQuantity("teh") * 1.30 +
-        getQuantity("milo") * 2.00;
+      let subtotal = 0;
 
-      document.getElementById("result").textContent =
-        "Total: $" + total.toFixed(2);
+      menuItems.forEach(item => {
+        const quantity = getQuantity(item.id);
+        subtotal += quantity * item.price;
+      });
+
+      const gstRate = 0.09;
+      const gst = subtotal * gstRate;
+      const total = subtotal + gst;
+
+      document.getElementById("subtotal").textContent =
+        "$" + subtotal.toFixed(2);
+
+      document.getElementById("gst").textContent =
+        "$" + gst.toFixed(2);
+
+      document.getElementById("total").textContent =
+        "$" + total.toFixed(2);
     }
+
+    loadMenu();
   </script>
 
 </body>
