@@ -73,20 +73,9 @@
       margin-top: 25px;
       padding-top: 15px;
       border-top: 2px solid #333;
-    }
-
-    .bill-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 8px 0;
-    }
-
-    .total {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #ddd;
+      text-align: right;
     }
   </style>
 </head>
@@ -147,20 +136,7 @@
     <button onclick="calculateBill()">Calculate Bill</button>
 
     <div id="result">
-      <div class="bill-row">
-        <span>Subtotal:</span>
-        <span id="subtotal">$0.00</span>
-      </div>
-
-      <div class="bill-row">
-        <span>GST (9%):</span>
-        <span id="gst">$0.00</span>
-      </div>
-
-      <div class="bill-row total">
-        <span>Total:</span>
-        <span id="total">$0.00</span>
-      </div>
+      Total: $0.00
     </div>
   </div>
 
@@ -171,7 +147,7 @@
     }
 
     function calculateBill() {
-      const subtotal =
+      const total =
         getQuantity("chickenRice") * 4.50 +
         getQuantity("nasiLemak") * 4.00 +
         getQuantity("laksa") * 5.00 +
@@ -179,18 +155,8 @@
         getQuantity("teh") * 1.30 +
         getQuantity("milo") * 2.00;
 
-      const gstRate = 0.09;
-      const gst = subtotal * gstRate;
-      const total = subtotal + gst;
-
-      document.getElementById("subtotal").textContent =
-        "$" + subtotal.toFixed(2);
-
-      document.getElementById("gst").textContent =
-        "$" + gst.toFixed(2);
-
-      document.getElementById("total").textContent =
-        "$" + total.toFixed(2);
+      document.getElementById("result").textContent =
+        "Total: $" + total.toFixed(2);
     }
   </script>
 
